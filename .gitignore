@@ -1,0 +1,9 @@
+
+# Arquivos compilados do Java
+*.class
+
+# Banco de dados local
+*.db
+
+# Configurações locais do VS Code
+# Mantemos o settings.json do projeto
