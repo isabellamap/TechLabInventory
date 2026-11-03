@@ -1,5 +1,13 @@
 
+import dao.AtivoDAO;
+import dao.ChamadoDAO;
+import model.AtivoTI;
+import model.ChamadoSuporte;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 
 public class Main {
@@ -9,58 +17,91 @@ public class Main {
         try {
             ConexaoBanco.inicializarBanco();
 
-            AtivoDAO dao = new AtivoDAO();
+            try (Connection conexao = DriverManager.getConnection("jdbc:sqlite:techlab.db")) {
 
-            AtivoTI ativo1 = new AtivoTI(
-                "SRV-001",
-                "Servidor Dell",
-                "Servidor"
-            );
+                // Ativar as chaves estrangeiras
+                try (Statement stmt = conexao.createStatement()) {
+                    stmt.execute("PRAGMA foreign_keys = ON;");
+                }
 
-            AtivoTI ativo2 = new AtivoTI(
-                "EST-042",
-                "Computador HP",
-                "Estação de Trabalho"
-            );
+                AtivoDAO ativoDAO = new AtivoDAO(conexao);
+                ChamadoDAO chamadoDAO = new ChamadoDAO(conexao);
 
-            if (dao.buscarPorPatrimonio("SRV-001") == null) {
-                dao.salvar(ativo1);
-            }
-
-            if (dao.buscarPorPatrimonio("EST-042") == null) {
-                dao.salvar(ativo2);
-            }
-
-            List<AtivoTI> ativos = dao.listarTodos();
-
-            System.out.println("=== ATIVOS CADASTRADOS ===");
-
-            for (AtivoTI ativo : ativos) {
-                System.out.println(ativo);
-            }
-
-            System.out.println("\n=== BUSCAR POR PATRIMÔNIO ===");
-
-            AtivoTI encontrado =
-                dao.buscarPorPatrimonio("SRV-001");
-
-            if (encontrado != null) {
-                System.out.println("Equipamento encontrado:");
-                System.out.println(encontrado);
-            } else {
-                System.out.println("Equipamento não encontrado.");
-            }
- 
-            if (encontrado != null) {
-                ChamadoSuporte chamado = new ChamadoSuporte(
-                    "Servidor apresentando falhas",
-                    encontrado
+                // Inserir um novo ativo
+                AtivoTI novoAtivo = new AtivoTI(
+                    0,
+                    "Notebook Dell Latitude",
+                    "PAT-2026-001",
+                    4500.00
                 );
 
-                ChamadoDAO chamadoDAO = new ChamadoDAO();
+                ativoDAO.inserir(novoAtivo);
+
+                // Listar os ativos cadastrados
+                List<AtivoTI> ativos = ativoDAO.listar();
+
+                System.out.println("=== ATIVOS CADASTRADOS ===");
+
+                for (AtivoTI ativo : ativos) {
+                    System.out.println(ativo);
+                }
+
+                // Recuperar o último ativo cadastrado
+                AtivoTI ativoSalvo = ativos.get(ativos.size() - 1);
+
+                // Criar e salvar um chamado
+                ChamadoSuporte chamado = new ChamadoSuporte(
+                    0,
+                    "Troca de teclado defeituoso",
+                    "ABERTO",
+                    ativoSalvo
+                );
+
                 chamadoDAO.salvar(chamado);
 
-                System.out.println("\nChamado de suporte registrado com sucesso!");
+                System.out.println("\nChamado registrado com sucesso!");
+
+                // Atualizar os dados do ativo
+                ativoSalvo.setNome("Notebook Dell Latitude 5420");
+                ativoSalvo.setValor(4800.00);
+
+                boolean atualizado = ativoDAO.atualizar(ativoSalvo);
+
+                if (atualizado) {
+                    System.out.println("\nAtivo atualizado com sucesso!");
+                }
+
+                // Listar chamados vinculados ao ativo
+                System.out.println("\n=== CHAMADOS DO ATIVO ===");
+
+                List<ChamadoSuporte> chamados =
+                    chamadoDAO.listarPorAtivo(ativoSalvo.getId());
+
+                for (ChamadoSuporte c : chamados) {
+                    System.out.println(c);
+                }
+
+                // Tentar excluir o ativo enquanto possui chamado
+                System.out.println("\n=== TESTE DE EXCLUSÃO ===");
+
+                try {
+                    ativoDAO.excluir(ativoSalvo.getId());
+                } catch (SQLException e) {
+                    System.out.println("Não foi possível excluir o ativo: "
+                        + e.getMessage());
+                }
+
+                // Excluir primeiro os chamados associados
+                for (ChamadoSuporte c : chamados) {
+                    chamadoDAO.excluir(c.getId());
+                }
+
+                // Agora excluir o ativo
+                boolean excluido = ativoDAO.excluir(ativoSalvo.getId());
+
+                if (excluido) {
+                    System.out.println("Ativo excluído com sucesso!");
+                }
             }
 
         } catch (SQLException e) {

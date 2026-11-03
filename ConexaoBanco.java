@@ -9,7 +9,14 @@ public class ConexaoBanco {
     private static final String URL = "jdbc:sqlite:techlab.db";
 
     public static Connection obterConexao() throws SQLException {
-        return DriverManager.getConnection(URL);
+
+        Connection conexao = DriverManager.getConnection(URL);
+
+        try (Statement stmt = conexao.createStatement()) {
+            stmt.execute("PRAGMA foreign_keys = ON;");
+        }
+
+        return conexao;
     }
 
     public static void inicializarBanco() throws SQLException {
@@ -17,10 +24,9 @@ public class ConexaoBanco {
         String sqlAtivos = """
             CREATE TABLE IF NOT EXISTS ativos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                patrimonio TEXT NOT NULL UNIQUE,
                 nome TEXT NOT NULL,
-                categoria TEXT NOT NULL,
-                detalhe_especifico TEXT
+                patrimonio TEXT NOT NULL,
+                valor REAL NOT NULL
             );
         """;
 
@@ -28,6 +34,7 @@ public class ConexaoBanco {
             CREATE TABLE IF NOT EXISTS chamados (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 descricao TEXT NOT NULL,
+                status TEXT NOT NULL,
                 ativo_id INTEGER NOT NULL,
                 FOREIGN KEY (ativo_id) REFERENCES ativos(id)
             );
