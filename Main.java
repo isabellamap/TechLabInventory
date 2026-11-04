@@ -81,6 +81,16 @@ public class Main {
                     System.out.println(c);
                 }
 
+                // Testar o INNER JOIN
+                System.out.println("\n=== CHAMADOS COM DADOS COMPLETOS DOS ATIVOS ===");
+
+                List<ChamadoSuporte> chamadosComAtivo =
+                    chamadoDAO.listarTodosComAtivo();
+
+                for (ChamadoSuporte c : chamadosComAtivo) {
+                    System.out.println(c);
+                }
+
                 // Tentar excluir o ativo enquanto possui chamado
                 System.out.println("\n=== TESTE DE EXCLUSÃO ===");
 
@@ -101,6 +111,15 @@ public class Main {
 
                 if (excluido) {
                     System.out.println("Ativo excluído com sucesso!");
+                }
+
+                // Testar exclusão de um ativo inexistente
+                System.out.println("\n=== TESTE DE EXCLUSÃO DE ID INEXISTENTE ===");
+
+                boolean exclusaoInexistente = ativoDAO.excluir(9999);
+
+                if (!exclusaoInexistente) {
+                    System.out.println("Aviso: Nenhum ativo foi localizado com o ID informado. Exclusão não efetuada.");
                 }
             }
 

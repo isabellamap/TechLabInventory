@@ -78,16 +78,26 @@ public class AtivoDAO {
 
     // DELETE: excluir um ativo
     public boolean excluir(int id) throws SQLException {
+    String sqlVerificar = "SELECT COUNT(*) FROM chamados WHERE ativo_id = ?";
 
-        String sql = "DELETE FROM ativos WHERE id = ?";
+    try (PreparedStatement stmt = conexao.prepareStatement(sqlVerificar)) {
+        stmt.setInt(1, id);
 
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
-
-            stmt.setInt(1, id);
-
-            int linhasAfetadas = stmt.executeUpdate();
-
-            return linhasAfetadas > 0;
+        try (ResultSet rs = stmt.executeQuery()) {
+            if (rs.next() && rs.getInt(1) > 0) {
+                throw new SQLException(
+                    "Operação Negada: O ativo selecionado possui chamados vinculados e não pode ser removido sem antes tratar os chamados associados."
+                );
+            }
         }
+    }
+
+    String sqlExcluir = "DELETE FROM ativos WHERE id = ?";
+
+    try (PreparedStatement stmt = conexao.prepareStatement(sqlExcluir)) {
+        stmt.setInt(1, id);
+        int linhasAfetadas = stmt.executeUpdate();
+        return linhasAfetadas > 0;
+    }
     }
 }

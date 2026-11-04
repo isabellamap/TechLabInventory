@@ -66,6 +66,51 @@ public class ChamadoDAO {
         return chamados;
     }
 
+
+    // Listar todos os chamados com os dados completos dos ativos
+    public List<ChamadoSuporte> listarTodosComAtivo() throws SQLException {
+
+        List<ChamadoSuporte> chamados = new ArrayList<>();
+
+        String sql = """
+            SELECT c.id AS chamado_id,
+                   c.descricao,
+                   c.status,
+                   a.id AS ativo_id,
+                   a.nome,
+                   a.patrimonio,
+                   a.valor
+            FROM chamados c
+            INNER JOIN ativos a ON c.ativo_id = a.id;
+        """;
+
+        try (PreparedStatement stmt = conexao.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+
+                AtivoTI ativo = new AtivoTI(
+                    rs.getInt("ativo_id"),
+                    rs.getString("nome"),
+                    rs.getString("patrimonio"),
+                    rs.getDouble("valor")
+                );
+
+                ChamadoSuporte chamado = new ChamadoSuporte(
+                    rs.getInt("chamado_id"),
+                    rs.getString("descricao"),
+                    rs.getString("status"),
+                    ativo
+                );
+
+                chamados.add(chamado);
+            }
+        }
+
+        return chamados;
+    }
+
+
     // Excluir um chamado pelo ID
     public boolean excluir(int id) throws SQLException {
 
