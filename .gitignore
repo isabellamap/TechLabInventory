@@ -7,3 +7,12 @@
 
 # Configurações locais do VS Code
 # Mantemos o settings.json do projeto
+
+# Arquivos gerados durante os testes de persistência
+bin/
+*.csv
+*.txt
+*.json
+
+# Configurações de IDE
+.idea/
